@@ -1,0 +1,29 @@
+bool rayTraceCollide(Vector2 startPoint, Vector2 endPoint, Rectangle rect, Vector2 *yHitF, Vector2 *yHitL, Vector2 *xHitF, Vector2 *xHitL) {
+    Vector2 length;
+    float t;
+
+    // Check if hit is possible
+    // if (startPoint.x > (rect.x + rect.width) || endPoint.x < rect.x) return false;
+    // if (startPoint.y > (rect.y + rect.height) || endPoint.y < rect.y) return false;
+
+    length.x = (endPoint.x - startPoint.x);
+    length.y = (endPoint.y - startPoint.y);
+
+    t = (rect.x - startPoint.x) / length.x;
+    yHitF->x = startPoint.x + length.x * t;
+    yHitF->y = startPoint.y + length.y * t;
+
+    t = ((rect.x + rect.width) - endPoint.x) / length.x;
+    yHitL->x = endPoint.x + length.x * t;
+    yHitL->y = endPoint.y + length.y * t;
+
+    t = (rect.y - startPoint.y) / length.y;
+    xHitF->x = startPoint.x + length.x * t;
+    xHitF->y = startPoint.y + length.y * t;
+
+    t = ((rect.y + rect.height) - endPoint.y) / length.y;
+    xHitL->x = endPoint.x + length.x * t;
+    xHitL->y = endPoint.y + length.y * t;
+
+    return true;
+}

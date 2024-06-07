@@ -1,0 +1,4 @@
+# Ignore make generated binary and object files
+**/bin/*
+**/obj/*
+!.gitignore
