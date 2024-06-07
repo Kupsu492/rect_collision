@@ -16,6 +16,19 @@ typedef struct PlayerPetal {
     float speed;
 } PlayerPetal;
 
+typedef enum RectSide {
+    TOP,
+    BOTTOM,
+    LEFT,
+    RIGHT
+} RectSide;
+
+typedef struct BallRectCollision {
+    Vector2 pos;
+    float near;
+    RectSide side;
+} BallRectCollision;
+
 void swapCoordinates(float *a, float *b) {
     float t = *a;
     *a = *b;
@@ -66,7 +79,7 @@ void movePetal(Game *gameInfo, PlayerPetal *petal, float dir) {
     }
 }
 
-bool rayTraceCollide(Vector2 startPoint, Vector2 dir, Rectangle rect, Vector2 *hit, float *hitNear) {
+bool rayTraceCollide(Vector2 startPoint, Vector2 dir, Rectangle rect, Vector2 *hit, float *hitNear, RectSide *wallHit) {
     Vector2 near, far;
 
     // Get time value of rect x y axis on direction ray
@@ -92,6 +105,14 @@ bool rayTraceCollide(Vector2 startPoint, Vector2 dir, Rectangle rect, Vector2 *h
     hit->x = startPoint.x + (* hitNear) * dir.x;
     hit->y = startPoint.y + (* hitNear) * dir.y;
 
+    // Note: if near.x == near.y then ray hit rect in corner.
+    // if near.y > near.x then we can check top and bottom hit
+    if (near.x > near.y) {
+        *wallHit = (dir.x < 0) ? LEFT : RIGHT;
+    } else {
+        *wallHit = (dir.y < 0) ? BOTTOM : TOP;
+    }
+
     return true;
 }
 
@@ -106,6 +127,22 @@ void getBallPos(Vector2 *pos, Vector2 *startPoint, Vector2 *dir, float unitSpot)
     };
 
     float t = (tVector.x > tVector.y) ? tVector.x : tVector.y;
+
+    pos->x = startPoint->x + t * dir->x;
+    pos->y = startPoint->y + t * dir->y;
+}
+
+void getBallPosWithCollision(Vector2 *pos, Vector2 *startPoint, Vector2 *dir, Rectangle rect, float hit, RectSide wallHit) {
+    float movDir;
+
+    float t;
+    if (wallHit == LEFT || wallHit == RIGHT) {
+        movDir = (dir->y > 0) ? 1 : -1;
+        t = 1;
+    } else {
+        movDir = (dir->x > 0) ? 1 : -1;
+        t = ((dir->x * hit) - 15 * movDir) / dir->x;
+    }
 
     pos->x = startPoint->x + t * dir->x;
     pos->y = startPoint->y + t * dir->y;
@@ -135,6 +172,7 @@ int main(void)
     Vector2 startPoint = testPoints[0];
     Vector2 endPoint, ballPos, rayDir, hitPos;
     float hitNear;
+    RectSide wallHit;
 
     Color rectColor, lineColor;
     bool rectCollide;
@@ -157,12 +195,12 @@ int main(void)
             endPoint.y - startPoint.y
         };
 
-        rectCollide = rayTraceCollide(startPoint, rayDir, petal.rect, &hitPos, &hitNear);
+        rectCollide = rayTraceCollide(startPoint, rayDir, petal.rect, &hitPos, &hitNear, &wallHit);
 
         if (rectCollide) {
             rectColor = PURPLE;
             lineColor = RED;
-            getBallPos(&ballPos, &startPoint, &rayDir, hitNear);
+            getBallPosWithCollision(&ballPos, &startPoint, &rayDir, petal.rect, hitNear, wallHit);
         } else {
             rectColor = BLUE;
             lineColor = GREEN;
