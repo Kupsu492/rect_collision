@@ -92,7 +92,7 @@ bool rayTraceCollide(Vector2 startPoint, Vector2 dir, Rectangle rect, Vector2 *h
     if (near.x > far.x) swapCoordinates(&near.x, &far.x);
     if (near.y > far.y) swapCoordinates(&near.y, &far.y);
 
-    // First collision check to controll that ray can go throw the rect
+    // First collision check to controll that ray can go through the rect
     if (near.x > far.y || near.y > far.x) return false;
 
     *hitNear = (near.x > near.y) ? near.x : near.y;
@@ -108,9 +108,9 @@ bool rayTraceCollide(Vector2 startPoint, Vector2 dir, Rectangle rect, Vector2 *h
     // Note: if near.x == near.y then ray hit rect in corner.
     // if near.y > near.x then we can check top and bottom hit
     if (near.x > near.y) {
-        *wallHit = (dir.x < 0) ? LEFT : RIGHT;
+        *wallHit = (dir.x < 0) ? BOTTOM : TOP;
     } else {
-        *wallHit = (dir.y < 0) ? BOTTOM : TOP;
+        *wallHit = (dir.y < 0) ? LEFT : RIGHT;
     }
 
     return true;
@@ -135,10 +135,29 @@ void getBallPos(Vector2 *pos, Vector2 *startPoint, Vector2 *dir, float unitSpot)
 void getBallPosWithCollision(Vector2 *pos, Vector2 *startPoint, Vector2 *dir, Rectangle rect, float hit, RectSide wallHit) {
     float movDir;
 
-    float t;
-    if (wallHit == LEFT || wallHit == RIGHT) {
-        movDir = (dir->y > 0) ? 1 : -1;
-        t = 1;
+    Vector2 cornerPoint;
+    float t, cornerYDistance, xDist;
+    if (wallHit == TOP || wallHit == BOTTOM) {
+        // movDir = (dir->x > 0) ? 1 : -1;
+        // cornerT = (cornerPoint - startPoint->x) / dir->x;
+        movDir = (dir->x > 0) ? 1 : -1;
+        cornerPoint.x = (dir->x > 0) ? rect.x : rect.x + rect.width;
+        t = ((cornerPoint.x - startPoint->x)) / dir->x;
+        // pos->x = startPoint->x + t * dir->x;
+        // pos->y = startPoint->y + t * dir->y;
+        // return;
+
+        cornerPoint.y = startPoint->y + t * dir->y;
+        cornerYDistance = rect.y - cornerPoint.y; //TODO: check if other corner
+        if (cornerYDistance < 15 && cornerYDistance > 0) {
+            xDist = sqrt(fabs(cornerYDistance*cornerYDistance - 15*15));
+            t = ((cornerPoint.x - xDist - startPoint->x)) / dir->x;
+        } else {
+            // If past the corner
+            movDir = (dir->y > 0) ? 1 : -1;
+            t = ((dir->y * hit) - 15 * movDir) / dir->y;
+        }
+
     } else {
         movDir = (dir->x > 0) ? 1 : -1;
         t = ((dir->x * hit) - 15 * movDir) / dir->x;
@@ -214,7 +233,7 @@ int main(void)
             DrawLine(startPoint.x, startPoint.y, endPoint.x, endPoint.y, lineColor);
 
             if (rectCollide) {
-                DrawCircleV(hitPos, 5, MAROON);
+                // DrawCircleV(hitPos, 5, MAROON);
             }
             DrawCircleLinesV(ballPos, 15, BLACK);
         EndDrawing();
