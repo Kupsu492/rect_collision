@@ -81,12 +81,13 @@ void movePetal(Game *gameInfo, PlayerPetal *petal, float dir) {
 
 bool rayTraceCollide(Vector2 startPoint, Vector2 dir, Rectangle rect, Vector2 *hit, float *hitNear, RectSide *wallHit) {
     Vector2 near, far;
+    float radius = 15;
 
     // Get time value of rect x y axis on direction ray
-    near.x = (rect.y - startPoint.y) / dir.y;
-    near.y = (rect.x - startPoint.x) / dir.x;
-    far.x =  (rect.y + rect.height - startPoint.y) / dir.y;
-    far.y =  (rect.x + rect.width - startPoint.x) / dir.x;
+    near.x = (rect.y - radius - startPoint.y) / dir.y;
+    near.y = (rect.x - radius - startPoint.x) / dir.x;
+    far.x =  (rect.y + rect.height + radius - startPoint.y) / dir.y;
+    far.y =  (rect.x + rect.width + radius - startPoint.x) / dir.x;
 
     // Sort time values so that near has smaller lengths
     if (near.x > far.x) swapCoordinates(&near.x, &far.x);
@@ -98,8 +99,7 @@ bool rayTraceCollide(Vector2 startPoint, Vector2 dir, Rectangle rect, Vector2 *h
     *hitNear = (near.x > near.y) ? near.x : near.y;
     float hitFar = (far.x < far.y) ? far.x : far.y;
 
-    // Check that collision doesen't happen behind or past the ray
-    // In other words, that collision happens between the start and end points
+    // Check that collision happens between the start and end points
     if (hitFar < 0 || (* hitNear) > 1) return false;
 
     hit->x = startPoint.x + (* hitNear) * dir.x;
@@ -219,7 +219,9 @@ int main(void)
         if (rectCollide) {
             rectColor = PURPLE;
             lineColor = RED;
-            getBallPosWithCollision(&ballPos, &startPoint, &rayDir, petal.rect, hitNear, wallHit);
+            // getBallPosWithCollision(&ballPos, &startPoint, &rayDir, petal.rect, hitNear, wallHit);
+            ballPos.x = hitPos.x;
+            ballPos.y = hitPos.y;
         } else {
             rectColor = BLUE;
             lineColor = GREEN;
