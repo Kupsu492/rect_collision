@@ -80,7 +80,7 @@ void movePetal(Game *gameInfo, PlayerPetal *petal, float dir) {
 }
 
 bool rayTraceCollide(Vector2 startPoint, Vector2 dir, Rectangle rect, Vector2 *hit, float *hitNear, RectSide *wallHit) {
-    Vector2 near, far;
+    Vector2 near, far, ballNear;
     float radius = 15;
 
     // Get time value of rect x y axis on direction ray
@@ -104,6 +104,15 @@ bool rayTraceCollide(Vector2 startPoint, Vector2 dir, Rectangle rect, Vector2 *h
 
     hit->x = startPoint.x + (* hitNear) * dir.x;
     hit->y = startPoint.y + (* hitNear) * dir.y;
+
+    // Check hit spot distance from closest corner
+    // Make sure hit spot is correct on outer corners
+    ballNear.x = (hit->x > rect.x) ? hit->x : rect.x;
+    if (rect.x + rect.width < ballNear.x) ballNear.x = rect.x + rect.width;
+    ballNear.y = (hit->y > rect.y) ? hit->y : rect.y;
+    if (rect.y + rect.height < ballNear.y) ballNear.y = rect.y + rect.height;
+
+    if (pow(hit->x - ballNear.x, 2) + pow(hit->y - ballNear.y, 2) > radius*radius + 20) return false;
 
     // Note: if near.x == near.y then ray hit rect in corner.
     // if near.y > near.x then we can check top and bottom hit
