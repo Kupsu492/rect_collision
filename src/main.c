@@ -99,11 +99,27 @@ bool rayTraceCollide(Vector2 startPoint, Vector2 dir, Rectangle rect, Vector2 *h
     *hitNear = (near.x > near.y) ? near.x : near.y;
     float hitFar = (far.x < far.y) ? far.x : far.y;
 
-    // Check that collision happens between the start and end points
-    if (hitFar < 0 || (* hitNear) > 1) return false;
-
     hit->x = startPoint.x + (* hitNear) * dir.x;
     hit->y = startPoint.y + (* hitNear) * dir.y;
+
+    // Check that the rect was collided as passing by
+    // Note: if near.x == near.y then it is a direct corner hit.
+    if (near.x > near.y) {
+        if (dir.x < 0) {
+            *wallHit = TOP;
+        } else {
+            *wallHit = BOTTOM;
+        }
+    } else {
+        if (dir.y < 0) {
+            *wallHit = RIGHT;
+        } else {
+            *wallHit = LEFT;
+        }
+    }
+
+    // Check that a direct collision happens between the start and end points
+    if (hitFar < 0 || (* hitNear) > 1) return false;
 
     // Check hit spot distance from closest corner
     // Make sure hit spot is correct on outer corners
@@ -113,14 +129,6 @@ bool rayTraceCollide(Vector2 startPoint, Vector2 dir, Rectangle rect, Vector2 *h
     if (rect.y + rect.height < ballNear.y) ballNear.y = rect.y + rect.height;
 
     if (pow(hit->x - ballNear.x, 2) + pow(hit->y - ballNear.y, 2) > radius*radius + 20) return false;
-
-    // Note: if near.x == near.y then ray hit rect in corner.
-    // if near.y > near.x then we can check top and bottom hit
-    if (near.x > near.y) {
-        *wallHit = (dir.x < 0) ? BOTTOM : TOP;
-    } else {
-        *wallHit = (dir.y < 0) ? LEFT : RIGHT;
-    }
 
     return true;
 }
@@ -137,8 +145,8 @@ void getBallPos(Vector2 *pos, Vector2 *startPoint, Vector2 *dir, float unitSpot)
 
     float t = (tVector.x > tVector.y) ? tVector.x : tVector.y;
 
-    pos->x = startPoint->x + t * dir->x;
-    pos->y = startPoint->y + t * dir->y;
+    pos->x = startPoint->x + dir->x;
+    pos->y = startPoint->y + dir->y;
 }
 
 void getBallPosWithCollision(Vector2 *pos, Vector2 *startPoint, Vector2 *dir, Rectangle rect, float hit, RectSide wallHit) {
@@ -198,7 +206,7 @@ int main(void)
     };
 
     Vector2 startPoint = testPoints[0];
-    Vector2 endPoint, ballPos, rayDir, hitPos;
+    Vector2 endPoint, ballPos, rayDir, hitPos, normal;
     float hitNear;
     RectSide wallHit;
 
@@ -231,6 +239,12 @@ int main(void)
             // getBallPosWithCollision(&ballPos, &startPoint, &rayDir, petal.rect, hitNear, wallHit);
             ballPos.x = hitPos.x;
             ballPos.y = hitPos.y;
+            switch(wallHit) {
+                case TOP: normal = (Vector2) {0,20}; break;
+                case BOTTOM: normal = (Vector2) {0,-20}; break;
+                case LEFT: normal = (Vector2) {-20,0}; break;
+                case RIGHT: normal = (Vector2) {20,0}; break;
+            }
         } else {
             rectColor = BLUE;
             lineColor = GREEN;
@@ -244,6 +258,7 @@ int main(void)
             DrawLine(startPoint.x, startPoint.y, endPoint.x, endPoint.y, lineColor);
 
             if (rectCollide) {
+                DrawLine(hitPos.x, hitPos.y, hitPos.x + normal.x, hitPos.y + normal.y, BLUE);
                 // DrawCircleV(hitPos, 5, MAROON);
             }
             DrawCircleLinesV(ballPos, 15, BLACK);
